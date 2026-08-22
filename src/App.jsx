@@ -1,76 +1,73 @@
-import React, { useState, useRef, useMemo, useCallback } from 'react'
+import React, { useState, useMemo, useCallback } from 'react'
 import { parseFile } from './lib/parse.js'
 import { computeNet, computeChange } from './lib/calc.js'
 import { decode } from './lib/decode.js'
-import { loadHistory, saveDay, clearHistory, deleteDay } from './lib/store.js'
-import { SAMPLE_DAYS } from './lib/sample.js'
+import { buildConfluence } from './lib/confluence.js'
+import { makeSummary } from './lib/summary.js'
+import { loadBundles, addSource, clearAll, deleteBundle } from './lib/store.js'
+import { SAMPLE_BUNDLES } from './lib/sample.js'
+import UploadSlots from './components/UploadSlots.jsx'
+import { ConfluenceCard, ScenarioCard, SummaryCard, SourcesCard } from './components/Confluence.jsx'
 import { NetTable, ChangeTable, TrendTable } from './components/Tables.jsx'
+import TrendGraph from './components/TrendGraph.jsx'
 import PathCanvas from './components/PathCanvas.jsx'
 
 export default function App() {
-  const [history, setHistory] = useState(loadHistory())
+  const [bundles, setBundles] = useState(loadBundles())
   const [error, setError] = useState('')
-  const [tab, setTab] = useState('dash')
-  const [drag, setDrag] = useState(false)
+  const [tab, setTab] = useState('upload')
   const [selectedDate, setSelectedDate] = useState(null)
-  const fileRef = useRef(null)
 
-  // Which day are we viewing? default = newest
   const activeIdx = useMemo(() => {
-    if (!history.length) return -1
+    if (!bundles.length) return -1
     if (!selectedDate) return 0
-    const i = history.findIndex((h) => h.date === selectedDate)
+    const i = bundles.findIndex((b) => b.date === selectedDate)
     return i >= 0 ? i : 0
-  }, [history, selectedDate])
+  }, [bundles, selectedDate])
 
-  const today = activeIdx >= 0 ? history[activeIdx] : null
-  const prev = activeIdx >= 0 ? history[activeIdx + 1] : null
+  const bundle = activeIdx >= 0 ? bundles[activeIdx] : null
+  const prevBundle = activeIdx >= 0 ? bundles[activeIdx + 1] : null
 
-  const todayNet = today?.net || (today ? computeNet(today) : null)
-  const prevNet = prev?.net || (prev ? computeNet(prev) : null)
-  const change = useMemo(
-    () => (todayNet ? computeChange(todayNet, prevNet) : null),
-    [todayNet, prevNet]
-  )
+  const oi = bundle?.sources?.participant_oi
+  const prevOi = prevBundle?.sources?.participant_oi
+  const todayNet = oi ? (oi.net || computeNet(oi)) : null
+  const prevNet = prevOi ? (prevOi.net || computeNet(prevOi)) : null
+  const change = useMemo(() => (todayNet ? computeChange(todayNet, prevNet) : null), [todayNet, prevNet])
+
+  const conf = useMemo(() => {
+    if (!bundle) return null
+    const s = bundle.sources
+    return buildConfluence({
+      oi, oiChange: change, vol: s.participant_vol, fiiStats: s.fii_stats,
+      cash: s.fii_dii_cash, optionChain: s.option_chain, vix: s.vix,
+    })
+  }, [bundle, oi, change])
+
   const decoded = useMemo(() => {
     if (!todayNet) return null
-    const histFromActive = history.slice(activeIdx)
-    return decode(todayNet, change, histFromActive)
-  }, [todayNet, change, history, activeIdx])
+    const hist = bundles.slice(activeIdx).filter((b) => b.sources?.participant_oi)
+      .map((b) => ({ date: b.date, net: b.sources.participant_oi.net || computeNet(b.sources.participant_oi) }))
+    return decode(todayNet, change, hist)
+  }, [todayNet, change, bundles, activeIdx])
 
-  const ingest = useCallback((day) => {
-    const updated = saveDay(day)
-    setHistory(updated)
-    setSelectedDate(day.date)
-    setError('')
-  }, [])
+  const summary = useMemo(() => (conf && bundle ? makeSummary(conf, bundle) : ''), [conf, bundle])
 
-  const onFile = async (file) => {
-    if (!file) return
+  const onUpload = useCallback(async (file, forcedType) => {
     try {
       setError('')
-      const day = await parseFile(file)
-      ingest(day)
-      setTab('dash')
+      const parsed = await parseFile(file, forcedType)
+      const updated = addSource(parsed)
+      setBundles(updated)
+      setSelectedDate(parsed.date)
     } catch (e) {
-      setError(e.message || 'File parse नहीं हो पाई। सही NSE Participant OI फ़ाइल (.xlsx/.csv) चुनें।')
+      setError((e && e.message) || 'File parse नहीं हो पाई।')
     }
-  }
+  }, [])
 
   const loadSample = () => {
-    clearHistory()
-    SAMPLE_DAYS.forEach((d) => saveDay(d))
-    const h = loadHistory()
-    setHistory(h)
-    setSelectedDate(h[0]?.date || null)
-    setError('')
-    setTab('dash')
-  }
-
-  const onDrop = (e) => {
-    e.preventDefault(); setDrag(false)
-    const f = e.dataTransfer.files?.[0]
-    onFile(f)
+    clearAll()
+    localStorage.setItem('oi_tracker_bundles_v2', JSON.stringify([...SAMPLE_BUNDLES].sort((a, b) => (a.date < b.date ? 1 : -1))))
+    const b = loadBundles(); setBundles(b); setSelectedDate(b[0]?.date || null); setError(''); setTab('dash')
   }
 
   return (
@@ -80,142 +77,110 @@ export default function App() {
           <div className="logo">OI</div>
           <div>
             <h1>Operator OI Tracker</h1>
-            <div className="sub">Participant-wise Open Interest · Smart-Money Decoder</div>
+            <div className="sub">Multi-Source NSE Smart-Money Decoder</div>
           </div>
         </div>
-        {today && <div className="cap" style={{ color: 'var(--muted)', fontSize: 12 }}>📅 {today.date}</div>}
+        {bundle && <div className="cap" style={{ color: 'var(--muted)', fontSize: 12 }}>📅 {bundle.date}</div>}
       </div>
 
-      {/* Upload zone */}
-      <div
-        className={`drop ${drag ? 'drag' : ''}`}
-        onDragOver={(e) => { e.preventDefault(); setDrag(true) }}
-        onDragLeave={() => setDrag(false)}
-        onDrop={onDrop}
-        onClick={() => fileRef.current?.click()}
-        role="button"
-      >
-        <div className="big">📤 Upload NSE Sheet (.xlsx / .csv)</div>
-        <div className="hint">"Participant wise Open Interest" फ़ाइल यहाँ tap करके चुनें या drag करें</div>
-        <input ref={fileRef} type="file" accept=".xlsx,.xls,.csv" onChange={(e) => onFile(e.target.files?.[0])} />
+      <div className="tabs">
+        <div className={`tab ${tab === 'upload' ? 'active' : ''}`} onClick={() => setTab('upload')}>📤 Upload</div>
+        <div className={`tab ${tab === 'dash' ? 'active' : ''}`} onClick={() => setTab('dash')}>🎯 Confluence</div>
+        <div className={`tab ${tab === 'signals' ? 'active' : ''}`} onClick={() => setTab('signals')}>🔎 Signals</div>
+        <div className={`tab ${tab === 'tables' ? 'active' : ''}`} onClick={() => setTab('tables')}>📊 Tables</div>
+        <div className={`tab ${tab === 'trend' ? 'active' : ''}`} onClick={() => setTab('trend')}>📈 Trend</div>
+        <div className={`tab ${tab === 'path' ? 'active' : ''}`} onClick={() => setTab('path')}>🔮 Path</div>
+        <div className={`tab ${tab === 'hist' ? 'active' : ''}`} onClick={() => setTab('hist')}>🗂️ Days</div>
       </div>
 
       <div className="toolbar">
-        <button className="btn sm ghost" onClick={loadSample}>🧪 Sample data से try करें</button>
-        {history.length > 0 && (
-          <button className="btn sm ghost" onClick={() => { clearHistory(); setHistory([]); setSelectedDate(null) }}>🗑️ सब मिटाएँ</button>
-        )}
+        <button className="btn sm ghost" onClick={loadSample}>🧪 Sample (all sources)</button>
+        {bundles.length > 0 && <button className="btn sm ghost" onClick={() => { clearAll(); setBundles([]); setSelectedDate(null) }}>🗑️ सब मिटाएँ</button>}
       </div>
 
-      {error && <div className="warnbox">⚠️ {error}</div>}
+      {tab === 'upload' && <UploadSlots bundle={bundle} onUpload={onUpload} error={error} />}
 
-      {!today ? (
-        <EmptyState onSample={loadSample} />
-      ) : (
+      {tab !== 'upload' && !bundle && (
+        <div className="card" style={{ textAlign: 'center', padding: 26 }}>
+          <div style={{ fontSize: 38 }}>📊</div>
+          <h2 style={{ justifyContent: 'center' }}>पहले कोई NSE file upload करें</h2>
+          <button className="btn primary" style={{ marginTop: 10 }} onClick={() => setTab('upload')}>📤 Upload पर जाएँ</button>
+          <div style={{ marginTop: 8 }}><button className="btn sm ghost" onClick={loadSample}>या Sample आज़माएँ</button></div>
+        </div>
+      )}
+
+      {bundle && tab === 'dash' && (
         <>
-          <div className="tabs">
-            <div className={`tab ${tab === 'dash' ? 'active' : ''}`} onClick={() => setTab('dash')}>🧭 Dashboard</div>
-            <div className={`tab ${tab === 'tables' ? 'active' : ''}`} onClick={() => setTab('tables')}>📊 Tables</div>
-            <div className={`tab ${tab === 'trend' ? 'active' : ''}`} onClick={() => setTab('trend')}>📈 3-Day Trend</div>
-            <div className={`tab ${tab === 'path' ? 'active' : ''}`} onClick={() => setTab('path')}>🎯 Path</div>
-            <div className={`tab ${tab === 'hist' ? 'active' : ''}`} onClick={() => setTab('hist')}>🗂️ History</div>
-          </div>
-
-          {tab === 'dash' && <Dashboard decoded={decoded} today={today} prev={prev} />}
-          {tab === 'tables' && (
-            <>
-              <ChangeTable change={change} />
-              <NetTable todayNet={todayNet} />
-            </>
-          )}
-          {tab === 'trend' && <TrendTable history={history.slice(activeIdx)} />}
-          {tab === 'path' && <PathCanvas bias={decoded?.bias} />}
-          {tab === 'hist' && (
-            <HistoryList
-              history={history}
-              active={today?.date}
-              onSelect={(d) => { setSelectedDate(d); setTab('dash') }}
-              onDelete={(d) => setHistory(deleteDay(d))}
-            />
-          )}
+          <ConfluenceCard conf={conf} date={bundle.date} />
+          <SummaryCard text={summary} />
+          <ScenarioCard conf={conf} />
+          <SourcesCard bundle={bundle} onGoUpload={() => setTab('upload')} />
         </>
       )}
 
+      {bundle && tab === 'signals' && (
+        decoded ? <SignalsView decoded={decoded} /> :
+        <div className="card"><p className="disclaimer">Signals के लिए Participant OI file चाहिए। Upload में डालें।</p></div>
+      )}
+
+      {bundle && tab === 'tables' && (
+        todayNet ? <><ChangeTable change={change} /><NetTable todayNet={todayNet} /></> :
+        <div className="card"><p className="disclaimer">Tables के लिए Participant OI file चाहिए।</p></div>
+      )}
+
+      {bundle && tab === 'trend' && (
+        <>
+          <TrendGraph bundles={bundles} />
+          <TrendTable history={bundles.slice(activeIdx).filter((b)=>b.sources?.participant_oi).map((b)=>({date:b.date, net:b.sources.participant_oi.net||computeNet(b.sources.participant_oi)}))} />
+        </>
+      )}
+
+      {bundle && tab === 'path' && <PathCanvas bias={conf ? { key: conf.key } : decoded?.bias} />}
+
+      {bundle && tab === 'hist' && (
+        <DaysList bundles={bundles} active={bundle.date}
+          onSelect={(d) => { setSelectedDate(d); setTab('dash') }}
+          onDelete={(d) => setBundles(deleteBundle(d))} />
+      )}
+
       <div className="footer">
-        ⚠️ यह ऐप केवल शिक्षा व data-organisation के लिए है। कोई भी signal निवेश सलाह नहीं है — 90%+ F&O ट्रेडर नुकसान करते हैं (SEBI). अपना risk खुद समझें.<br />
-        Data source: NSE "Participant wise Open Interest" report · Method inspired by public OI-reading techniques.
+        ⚠️ यह ऐप केवल शिक्षा व data-organisation के लिए है। कोई signal निवेश सलाह नहीं — 90%+ F&O ट्रेडर नुकसान करते हैं (SEBI)। अपना risk खुद समझें।<br />
+        Sources: NSE All Reports (Derivatives). Institutional shorts कभी hedge होते हैं — यह context है, trigger नहीं।
       </div>
     </div>
   )
 }
 
-function Dashboard({ decoded, today, prev }) {
-  if (!decoded) return null
-  const { bias, score, signals } = decoded
-  const cls = bias.key === 'bull' ? 'bias-bull' : bias.key === 'bear' ? 'bias-bear' : bias.key === 'vol' ? 'bias-vol' : 'bias-neutral'
-  const knob = Math.max(0, Math.min(100, 50 + score * 8))
-  return (
-    <>
-      <div className="card">
-        <h2>🧭 Market Bias <span className="cap">आज का overall झुकाव</span></h2>
-        <div className="gauge">
-          <div className={`bias-pill ${cls}`}>{bias.label} · {bias.hi}</div>
-          <div className="meter">
-            <div className="meter-track"><div className="meter-knob" style={{ left: `${knob}%` }} /></div>
-            <div className="meter-labels"><span>मंदी Bearish</span><span>तेजी Bullish</span></div>
-          </div>
-        </div>
-        <p className="disclaimer" style={{ marginTop: 10 }}>
-          ✅ Loaded: <b>{today.fileName}</b>{prev ? ` · तुलना ${prev.date} से` : ' · (पिछले दिन का data नहीं — change के लिए एक और दिन upload करें)'}
-        </p>
-      </div>
-
-      <div className="card">
-        <h2>🔎 Decoded Signals <span className="cap">आसान भाषा में</span></h2>
-        {signals.map((s, i) => (
-          <div key={i} className={`sig ${s.level}`}>
-            <div className="t">{icon(s.level)} {s.title}</div>
-            <div className="hi">{s.hi}</div>
-            <div className="en">{s.en}</div>
-          </div>
-        ))}
-      </div>
-    </>
-  )
-}
-
-function icon(level) {
-  return level === 'danger' ? '🚨' : level === 'warn' ? '⚠️' : level === 'good' ? '✅' : 'ℹ️'
-}
-
-function HistoryList({ history, active, onSelect, onDelete }) {
+function SignalsView({ decoded }) {
+  const icon = (l) => l === 'danger' ? '🚨' : l === 'warn' ? '⚠️' : l === 'good' ? '✅' : 'ℹ️'
   return (
     <div className="card">
-      <h2>🗂️ Uploaded Days <span className="cap">{history.length} दिन save</span></h2>
-      {history.map((h) => (
-        <div className="hist-row" key={h.date}>
-          <div onClick={() => onSelect(h.date)} style={{ cursor: 'pointer', flex: 1 }}>
-            <b style={{ color: h.date === active ? 'var(--indigo)' : 'var(--txt)' }}>📅 {h.date}</b>
-            <div className="cap" style={{ color: 'var(--muted)', fontSize: 11 }}>{h.fileName}</div>
-          </div>
-          <button className="btn sm ghost" onClick={() => onSelect(h.date)}>View</button>
-          <button className="btn sm ghost" onClick={() => onDelete(h.date)}>🗑️</button>
+      <h2>🔎 Decoded Signals <span className="cap">Participant OI से</span></h2>
+      {decoded.signals.map((s, i) => (
+        <div key={i} className={`sig ${s.level}`}>
+          <div className="t">{icon(s.level)} {s.title}</div>
+          <div className="hi">{s.hi}</div>
+          <div className="en">{s.en}</div>
         </div>
       ))}
     </div>
   )
 }
 
-function EmptyState({ onSample }) {
+function DaysList({ bundles, active, onSelect, onDelete }) {
   return (
-    <div className="card" style={{ textAlign: 'center', padding: 28 }}>
-      <div style={{ fontSize: 40, marginBottom: 8 }}>📊</div>
-      <h2 style={{ justifyContent: 'center' }}>शुरू करने के लिए एक फ़ाइल upload करें</h2>
-      <p className="disclaimer" style={{ maxWidth: 460, margin: '6px auto 16px' }}>
-        NSE की वेबसाइट से रोज़ शाम "Participant wise Open Interest" फ़ाइल download करें और ऊपर upload करें।
-        या बिना फ़ाइल के देखने के लिए sample data आज़माएँ।
-      </p>
-      <button className="btn primary" onClick={onSample}>🧪 Sample data load करें</button>
+    <div className="card">
+      <h2>🗂️ Uploaded Days <span className="cap">{bundles.length} दिन</span></h2>
+      {bundles.map((b) => (
+        <div className="hist-row" key={b.date}>
+          <div onClick={() => onSelect(b.date)} style={{ cursor: 'pointer', flex: 1 }}>
+            <b style={{ color: b.date === active ? 'var(--indigo)' : 'var(--txt)' }}>📅 {b.date}</b>
+            <div className="cap" style={{ color: 'var(--muted)', fontSize: 11 }}>{Object.keys(b.sources).length} sources</div>
+          </div>
+          <button className="btn sm ghost" onClick={() => onSelect(b.date)}>View</button>
+          <button className="btn sm ghost" onClick={() => onDelete(b.date)}>🗑️</button>
+        </div>
+      ))}
     </div>
   )
 }
