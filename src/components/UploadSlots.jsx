@@ -1,7 +1,7 @@
 import React, { useRef, useState } from 'react'
 import { FILE_TYPES } from '../lib/parse.js'
 
-const ORDER = ['participant_oi', 'participant_vol', 'fii_stats', 'fii_dii_cash', 'option_chain', 'vix']
+const ORDER = ['participant_oi', 'participant_vol', 'fii_stats', 'option_chain']
 
 export default function UploadSlots({ bundle, onUpload, error }) {
   return (
