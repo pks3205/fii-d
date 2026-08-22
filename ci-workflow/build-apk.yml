@@ -1,0 +1,86 @@
+name: Build Android APK
+
+# Builds a debug (installable) APK automatically in the cloud.
+# No local Android SDK / Java needed. Runs on every push to the working
+# branch and can also be triggered manually from the Actions tab.
+
+on:
+  push:
+    branches:
+      - arena/01a028e0-fii-d
+    paths-ignore:
+      - '**.md'
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build web assets (Vite)
+        run: npm run build
+
+      - name: Sync Capacitor to Android
+        run: npx cap sync android
+
+      - name: Make gradlew executable
+        run: chmod +x android/gradlew
+
+      - name: Build debug APK
+        working-directory: android
+        run: ./gradlew assembleDebug --no-daemon --stacktrace
+
+      - name: Rename APK
+        run: |
+          mkdir -p out
+          cp android/app/build/outputs/apk/debug/app-debug.apk out/OperatorOI-Tracker-debug.apk
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: OperatorOI-Tracker-APK
+          path: out/OperatorOI-Tracker-debug.apk
+          if-no-files-found: error
+
+      - name: Publish APK to GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: apk-latest
+          name: Operator OI Tracker — Latest APK
+          body: |
+            📱 **Operator OI Tracker** — auto-built debug APK.
+
+            Install steps (Android):
+            1. Download `OperatorOI-Tracker-debug.apk` below.
+            2. On your phone: Settings → allow "Install unknown apps" for your browser/file manager.
+            3. Open the APK and tap Install.
+
+            ⚠️ This is a debug build for personal testing. Not on Play Store.
+            ⚠️ Educational tool — signals are not investment advice.
+          files: out/OperatorOI-Tracker-debug.apk
+          make_latest: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
