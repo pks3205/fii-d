@@ -12,7 +12,10 @@ import NseDownload from './components/NseDownload.jsx'
 import { ConfluenceCard, ScenarioCard, SummaryCard, SourcesCard } from './components/Confluence.jsx'
 import { NetTable, ChangeTable, TrendTable } from './components/Tables.jsx'
 import TrendGraph from './components/TrendGraph.jsx'
+import LevelMigration from './components/LevelMigration.jsx'
 import PathCanvas from './components/PathCanvas.jsx'
+import { expiryInfo } from './lib/expiry.js'
+import { bundleToCSV, downloadCSV, exportPDF } from './lib/export.js'
 
 function confirmExit() {
   if (window.confirm('क्या आप app बंद करना चाहते हैं? / Exit the app?')) {
@@ -172,9 +175,17 @@ export default function App() {
 
       {bundle && tab === 'dash' && (
         <>
+          <ExpiryCard bundle={bundle} />
           <ConfluenceCard conf={conf} date={bundle.date} />
+          {conf?.divergence?.active && (
+            <div className="card" style={{ borderLeft: '4px solid var(--amber)' }}>
+              <h2>⚡ FII vs Pro Divergence</h2>
+              <div className="sig warn"><div className="hi">{conf.divergence.text}</div></div>
+            </div>
+          )}
           <SummaryCard text={summary} />
           <ScenarioCard conf={conf} />
+          <ExportCard bundle={bundle} prevBundle={prevBundle} conf={conf} summary={summary} />
           <SourcesCard bundle={bundle} onGoUpload={() => setTab('upload')} />
         </>
       )}
@@ -192,6 +203,7 @@ export default function App() {
       {bundle && tab === 'trend' && (
         <>
           <TrendGraph bundles={bundles} />
+          <LevelMigration bundles={bundles} />
           <TrendTable history={bundles.slice(activeIdx).filter((b)=>b.sources?.participant_oi).map((b)=>({date:b.date, net:b.sources.participant_oi.net||computeNet(b.sources.participant_oi)}))} />
         </>
       )}
@@ -208,6 +220,37 @@ export default function App() {
         ⚠️ यह ऐप केवल शिक्षा व data-organisation के लिए है। कोई signal निवेश सलाह नहीं — 90%+ F&O ट्रेडर नुकसान करते हैं (SEBI)। अपना risk खुद समझें।<br />
         Sources: NSE All Reports (Derivatives). Institutional shorts कभी hedge होते हैं — यह context है, trigger नहीं।
       </div>
+    </div>
+  )
+}
+
+function ExpiryCard({ bundle }) {
+  const e = expiryInfo(bundle.date)
+  const cls = e.urgency === 'high' ? 'sig danger' : e.urgency === 'mid' ? 'sig warn' : 'sig info'
+  return (
+    <div className="card">
+      <h2>⏳ Expiry <span className="cap">{e.expiryDate}{e.isMonthly ? ' · Monthly' : ' · Weekly'}</span></h2>
+      <div className={cls}>
+        <div className="t">📅 {e.label}</div>
+        <div className="hi">{e.note}</div>
+      </div>
+    </div>
+  )
+}
+
+function ExportCard({ bundle, prevBundle, conf, summary }) {
+  return (
+    <div className="card">
+      <h2>📤 Export / Share</h2>
+      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+        <button className="btn" onClick={() => downloadCSV(`OI_${bundle.date}.csv`, bundleToCSV(bundle, prevBundle, conf))}>
+          📄 CSV download
+        </button>
+        <button className="btn primary" onClick={() => exportPDF(bundle, conf, summary)}>
+          🖨️ PDF / Print
+        </button>
+      </div>
+      <p className="disclaimer" style={{ marginTop: 8 }}>CSV में सारी tables + signals आते हैं। PDF share/save के लिए print dialog खुलेगा ("Save as PDF" चुनें)।</p>
     </div>
   )
 }

@@ -71,6 +71,25 @@ export function buildConfluence({ oi, oiChange, vol, fiiStats, optionChain }) {
 
   const vixFlag = null
 
+  // --- FII vs Pro divergence detection ---
+  let divergence = null
+  if (todayNet) {
+    const fiiFut = net(todayNet, 'FII', 'idxFut')
+    const proFut = net(todayNet, 'Pro', 'idxFut')
+    const fiiOptDir = net(todayNet, 'FII', 'idxCall') - net(todayNet, 'FII', 'idxPut')
+    const proOptDir = net(todayNet, 'Pro', 'idxCall') - net(todayNet, 'Pro', 'idxPut')
+    const fiiBias = Math.sign(fiiFut) || Math.sign(fiiOptDir)
+    const proBias = Math.sign(proFut) || Math.sign(proOptDir)
+    if (fiiBias && proBias && fiiBias !== proBias) {
+      divergence = {
+        active: true,
+        fii: fiiBias > 0 ? 'Bullish' : 'Bearish',
+        pro: proBias > 0 ? 'Bullish' : 'Bearish',
+        text: `⚡ Divergence: FII ${fiiBias > 0 ? 'तेजी' : 'मंदी'} में हैं पर Pro ${proBias > 0 ? 'तेजी' : 'मंदी'} में — smart money आपस में असहमत। Volatility/whipsaw की संभावना, एकतरफा भरोसा न करें।`,
+      }
+    }
+  }
+
   // --- Tally ---
   const bullWeight = votes.filter((v) => v.dir > 0).reduce((a, v) => a + v.weight, 0)
   const bearWeight = votes.filter((v) => v.dir < 0).reduce((a, v) => a + v.weight, 0)
@@ -90,7 +109,7 @@ export function buildConfluence({ oi, oiChange, vol, fiiStats, optionChain }) {
 
   return {
     verdict, key, scoreNet: +scoreNet.toFixed(2), agreement,
-    bullVotes, bearVotes, votes, levels, vixFlag, convictionNote,
+    bullVotes, bearVotes, votes, levels, vixFlag, convictionNote, divergence,
     sourcesUsed: countSources({ oi, vol, fiiStats, optionChain }),
   }
 }
