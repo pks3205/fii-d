@@ -41,7 +41,7 @@ export function nseLinks(dateStr) {
       label: 'F&O Bhavcopy (Option Chain OI)',
       icon: '🎯',
       url: `https://nsearchives.nseindia.com/content/fo/BhavCopy_NSE_FO_0_0_0_${yyyy}${mm}${dd}_F_0000.csv.zip`,
-      note: 'ZIP (UDiFF format) — unzip करके CSV को Option Chain slot में डालें',
+      note: 'ZIP (UDiFF) — सीधे upload करें, app खुद खोल लेगा',
     },
   ]
 }

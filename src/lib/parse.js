@@ -1,5 +1,6 @@
 import { readRows, detectType, detectFromName } from './parsers/detect.js'
 import { parseParticipantOI } from './parsers/participantOI.js'
+import JSZip from 'jszip'
 import {
   parseParticipantVol, parseFiiStats, parseFiiDiiCash, parseOptionChain, parseVix,
 } from './parsers/others.js'
@@ -24,26 +25,45 @@ const ROUTER = {
  * Parse a File → { type, date, ...data }. Auto-detects type; if a forcedType is
  * given (user dropped into a specific slot), tries that first, then auto.
  */
+/** If the file is a .zip, extract the first CSV/xls inside and return
+ *  { bytes, name }. Otherwise return the raw bytes + original name. */
+async function unwrap(file) {
+  const buf = new Uint8Array(await file.arrayBuffer())
+  const isZip = /\.zip$/i.test(file.name) || (buf[0] === 0x50 && buf[1] === 0x4b) // 'PK'
+  if (!isZip) return { bytes: buf, name: file.name }
+
+  const zip = await JSZip.loadAsync(buf)
+  // Prefer a .csv, else .xls/.xlsx, else the first file.
+  const names = Object.keys(zip.files).filter((n) => !zip.files[n].dir)
+  const pick =
+    names.find((n) => /\.csv$/i.test(n)) ||
+    names.find((n) => /\.(xlsx?|xls)$/i.test(n)) ||
+    names[0]
+  if (!pick) throw new Error('ZIP खाली है — कोई CSV/Excel नहीं मिला।')
+  const inner = await zip.files[pick].async('uint8array')
+  return { bytes: inner, name: pick }
+}
+
 export async function parseFile(file, forcedType = null) {
-  const buf = await file.arrayBuffer()
-  const rows = readRows(new Uint8Array(buf))
+  const { bytes, name } = await unwrap(file)
+  const rows = readRows(bytes)
 
   let type = forcedType || detectType(rows)
-  if (type === 'unknown') type = detectFromName(file.name) || 'unknown'
+  if (type === 'unknown') type = detectFromName(name) || detectFromName(file.name) || 'unknown'
   if (type === 'unknown') {
-    throw new Error('यह NSE file पहचान नहीं पाई। सही report चुनें (Participant OI / Volumes / FII Stats / Cash / Option Chain / VIX)।')
+    throw new Error('यह NSE file पहचान नहीं पाई। सही report चुनें (Participant OI / Volumes / FII Stats / Option Chain)।')
   }
 
   const parser = ROUTER[type]
   if (!parser) throw new Error(`Parser नहीं मिला: ${type}`)
 
   try {
-    return parser(rows, file.name)
+    return parser(rows, name)
   } catch (e) {
     // If forced type failed, retry with auto-detect
     if (forcedType) {
       const auto = detectType(rows)
-      if (auto !== 'unknown' && auto !== forcedType && ROUTER[auto]) return ROUTER[auto](rows, file.name)
+      if (auto !== 'unknown' && auto !== forcedType && ROUTER[auto]) return ROUTER[auto](rows, name)
     }
     throw e
   }

@@ -196,7 +196,7 @@ export default function App() {
         </>
       )}
 
-      {bundle && tab === 'path' && <PathCanvas bias={conf ? { key: conf.key } : decoded?.bias} />}
+      {bundle && tab === 'path' && <PathCanvas bias={conf ? { key: conf.key } : decoded?.bias} levels={conf?.levels} />}
 
       {bundle && tab === 'hist' && (
         <DaysList bundles={bundles} active={bundle.date}
