@@ -22,3 +22,4 @@ out/
 
 # Keep build source assets tracked, but not scratch
 build-assets/*.tmp
+.github/
