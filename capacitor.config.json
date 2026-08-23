@@ -1,0 +1,9 @@
+{
+  "appId": "com.operatoroi.tracker",
+  "appName": "Operator OI Tracker",
+  "webDir": "dist",
+  "android": {
+    "allowMixedContent": false
+  },
+  "backgroundColor": "#0b0d12"
+}
