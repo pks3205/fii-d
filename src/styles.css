@@ -261,3 +261,7 @@ tr:last-child td { border-bottom: none; }
 .empty-ic { font-size: 46px; margin-bottom: 10px; }
 .empty h2 { justify-content: center; font-size: 17px; }
 .empty p { color: var(--muted); max-width: 440px; margin: 6px auto 18px; line-height: 1.6; font-size: 13px; }
+
+/* badge */
+.badge { font-size: 11.5px; font-weight: 800; padding: 4px 10px; border-radius: 999px; border: 1px solid var(--line); background: var(--card2); white-space: nowrap; }
+.badge.pos { color: var(--green); border-color: #1c6b48; } .badge.neg { color: var(--red); border-color: #7a2438; }
