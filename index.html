@@ -1,0 +1,202 @@
+<!doctype html>
+<html lang="en-IN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#100e0c" />
+    <meta name="description" content="GOLD OS — a premium trader home dashboard with a miniature XAUUSD terminal." />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <title>GOLD OS — Trader Home</title>
+    <link rel="manifest" href="./manifest.webmanifest" />
+    <link rel="icon" type="image/png" href="./assets/icon-192.png" />
+    <link rel="apple-touch-icon" href="./assets/icon-192.png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700&family=Playfair+Display:wght@400;500&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="./styles.css" />
+    <script type="module" src="./app.js"></script>
+  </head>
+  <body>
+    <div class="device-shell" id="device-shell" data-theme="dark">
+      <div class="wallpaper-art" aria-hidden="true"></div>
+      <div class="wallpaper-shade" aria-hidden="true"></div>
+
+      <header class="system-header">
+        <div class="status-line" aria-label="Device status">
+          <span id="status-time">15:41</span>
+          <span class="status-icons" aria-hidden="true">
+            <svg viewBox="0 0 18 14"><path d="M1.2 4.7a11.2 11.2 0 0 1 15.6 0M4 7.4a7.2 7.2 0 0 1 10 0M6.8 10.1a3.2 3.2 0 0 1 4.4 0M9 12.3h.01" /></svg>
+            <svg viewBox="0 0 20 14"><path d="M2 11.8V9.3m4 2.5V7.1m4 4.7V4.9m4 6.9V2.8" /></svg>
+            <span class="battery-icon"><i></i></span>
+          </span>
+        </div>
+        <div class="brand-line">
+          <div class="brand-mark" aria-hidden="true"><span>G</span><i></i></div>
+          <div class="brand-text"><strong>GOLD OS</strong><span>TRADER HOME</span></div>
+          <div class="header-actions">
+            <span id="session-pill" class="session-pill"><i></i><span>SESSION</span></span>
+            <button class="settings-trigger" id="open-settings" type="button" aria-label="Open theme settings" title="Theme settings">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="m19.4 15 .1.1 1.4 1.1-1.4 2.4-1.7-.6a8.1 8.1 0 0 1-1.6.9l-.3 1.8h-2.8l-.3-1.8a8.1 8.1 0 0 1-1.6-.9l-1.7.6-1.4-2.4L7.5 15a8.4 8.4 0 0 1 0-1.9L6.1 12l1.4-2.4 1.7.6a8.1 8.1 0 0 1 1.6-.9l.3-1.8h2.8l.3 1.8a8.1 8.1 0 0 1 1.6.9l1.7-.6 1.4 2.4-1.4 1.1a8.4 8.4 0 0 1-.1 1.9Z" /></svg>
+            </button>
+          </div>
+        </div>
+      </header>
+
+      <main class="dashboard-content" id="dashboard-content">
+        <section class="clock-zone" id="clock-zone" aria-label="Current date and time">
+          <div class="clock-overline"><span class="clock-spark">✦</span> <span id="clock-timezone">ASIA / KOLKATA</span> <span class="overline-rule"></span> <span id="clock-greeting">GOOD AFTERNOON</span></div>
+          <time class="hero-clock" id="hero-clock" datetime="15:41">15:41</time>
+          <div class="hero-date" id="hero-date">FRI <i>•</i> 02 OCTOBER</div>
+          <div class="clock-caption"><span class="clock-caption-line"></span><span>MAKE THE NEXT MOVE COUNT</span><span class="clock-caption-line"></span></div>
+        </section>
+
+        <section class="planner-grid" id="planner-grid" aria-label="Calendar and today's schedule">
+          <article class="calendar-panel glass-panel" id="calendar-panel">
+            <div class="panel-head calendar-head">
+              <div><span class="micro-label">THE MONTH</span><h2 id="calendar-month">OCTOBER <span>2026</span></h2></div>
+              <div class="month-controls"><button type="button" id="previous-month" aria-label="Previous month">‹</button><button type="button" id="next-month" aria-label="Next month">›</button></div>
+            </div>
+            <div class="weekday-row" aria-hidden="true"><span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span><span>S</span></div>
+            <div class="calendar-days" id="calendar-days" role="grid" aria-label="Monthly calendar"></div>
+            <div class="calendar-footer"><span class="calendar-dot"></span><span>ROUTINE DAY</span></div>
+          </article>
+
+          <article class="schedule-panel glass-panel" id="schedule-panel">
+            <div class="panel-head schedule-head">
+              <div><span class="micro-label">A GENTLE PLAN</span><h2>Today</h2></div>
+              <button id="add-event" class="tiny-add" type="button" aria-label="Add schedule item">＋</button>
+            </div>
+            <div class="schedule-list" id="schedule-list"></div>
+            <div class="plan-note"><span class="plan-dot"></span> SAMPLE PLAN <span class="plan-time" id="next-event-label">LOCAL</span></div>
+          </article>
+        </section>
+
+        <section class="gold-module glass-panel" id="gold-module" aria-label="XAUUSD gold market">
+          <div class="gold-topline">
+            <div class="gold-identity"><span class="gold-coin" aria-hidden="true">Au</span><div><span class="gold-name">GOLD / US DOLLAR</span><strong>XAUUSD</strong></div></div>
+            <span id="data-badge" class="data-badge demo"><i></i><span>DEMO DATA</span></span>
+          </div>
+
+          <div class="quote-row" id="quote-row">
+            <div class="quote-price-wrap" id="price-reading"><span id="gold-price" class="gold-price">$4,182.60</span><span class="quote-unit">USD / OZ</span></div>
+            <div id="gold-change" class="gold-change positive"><span>+0.38%</span><small>DAY</small></div>
+          </div>
+          <div class="quote-meta" id="quote-meta"><span id="quote-status-copy">Simulated market · DEMO MODE</span><span id="quote-updated">Updated just now</span></div>
+
+          <div class="chart-wrap" id="chart-wrap">
+            <div class="chart-axis-labels" aria-hidden="true"><span id="chart-high-label">4,198</span><span id="chart-mid-label">4,183</span><span id="chart-low-label">4,168</span></div>
+            <svg class="candle-chart" id="candle-chart" viewBox="0 0 360 118" preserveAspectRatio="none" role="img" aria-label="XAUUSD candlestick chart"></svg>
+            <div class="chart-bottom-labels"><span id="chart-start-time">—</span><span id="chart-end-time">NOW</span></div>
+          </div>
+
+          <div class="market-controls" id="market-controls">
+            <div class="timeframe-picker" id="timeframe-picker" role="tablist" aria-label="Chart timeframe">
+              <button type="button" data-timeframe="1m" role="tab" aria-selected="false">1M</button>
+              <button type="button" data-timeframe="5m" role="tab" aria-selected="true" class="is-active">5M</button>
+              <button type="button" data-timeframe="15m" role="tab" aria-selected="false">15M</button>
+              <button type="button" data-timeframe="1h" role="tab" aria-selected="false">1H</button>
+            </div>
+            <span class="candle-count" id="candle-count">40 BARS</span>
+          </div>
+
+          <div class="day-range-row" id="day-range-row">
+            <div><span>HIGH</span><strong id="gold-high">$4,205.12</strong></div>
+            <div class="range-track" aria-hidden="true"><i id="range-marker"></i></div>
+            <div><span>LOW</span><strong id="gold-low">$4,151.80</strong></div>
+          </div>
+
+          <div class="snapshot-strip" id="snapshot-strip" aria-label="Technical snapshot">
+            <div class="snapshot-item" data-indicator="trend"><span>TREND</span><strong id="indicator-trend">BULLISH</strong></div>
+            <div class="snapshot-item" data-indicator="vwap"><span>VWAP</span><strong id="indicator-vwap">ABOVE</strong></div>
+            <div class="snapshot-item" data-indicator="rsi"><span>RSI</span><strong id="indicator-rsi">58</strong></div>
+            <div class="snapshot-item" data-indicator="volatility"><span>VOLATILITY</span><strong id="indicator-volatility">NORMAL</strong></div>
+          </div>
+          <div class="market-foot"><span class="feed-glyph">✳</span><span id="source-label">DEMO FEED · NOT A LIVE PRICE</span><span class="market-foot-spacer"></span><button id="refresh-market" class="refresh-market" type="button" aria-label="Refresh market data">↻</button></div>
+        </section>
+
+        <section class="year-progress" id="year-progress" aria-label="Year progress">
+          <div class="year-progress-head"><div><span class="micro-label">THE YEAR IN VIEW</span><strong id="year-label">2026</strong></div><strong class="year-percent" id="year-percent">75%</strong></div>
+          <div class="year-track"><i id="year-bar"></i><span id="year-marker"></span></div>
+          <div class="year-progress-foot"><span id="year-start-label">01 JAN</span><span id="days-left">90 DAYS LEFT</span><span id="year-end-label">31 DEC</span></div>
+        </section>
+
+        <section class="task-panel glass-panel" id="task-panel" aria-label="Today's tasks">
+          <div class="task-panel-head"><div><span class="micro-label">A CLEAR MIND, A CLEAR PLAN</span><h2>Today <span>·</span> tasks</h2></div><div class="task-panel-tools"><span class="task-completion" id="task-completion">0 / 4</span><button class="tiny-add task-add" id="add-task" type="button" aria-label="Add a task">＋</button></div></div>
+          <div class="task-list" id="task-list"></div>
+          <div class="task-panel-foot"><span class="task-orbit" aria-hidden="true">✧</span><span id="task-footer-copy">A thoughtful plan leaves room to breathe.</span><button class="text-link" id="edit-plan" type="button">EDIT PLAN</button></div>
+        </section>
+
+        <footer class="dashboard-footer"><span id="footer-session">SESSION · ASIA / KOLKATA</span><span>INFORMATIONAL ONLY · NOT A TRADE SIGNAL</span></footer>
+      </main>
+
+      <button class="floating-settings" id="floating-settings" type="button" aria-label="Theme settings"><span>◈</span></button>
+
+      <dialog class="settings-dialog" id="settings-dialog" aria-labelledby="settings-title">
+        <div class="dialog-handle" aria-hidden="true"></div>
+        <div class="settings-heading"><div><span class="micro-label">GOLD OS · PERSONALISE</span><h2 id="settings-title">Theme settings</h2></div><button class="dialog-close" id="close-settings" type="button" aria-label="Close settings">×</button></div>
+        <div class="settings-scroll">
+          <section class="setting-section"><h3>DISPLAY</h3>
+            <label class="setting-control"><span><strong>Appearance</strong><small>Follow device or choose a mode</small></span><select id="setting-appearance"><option value="system">System</option><option value="dark">Dark</option><option value="light">Light</option></select></label>
+            <label class="setting-control"><span><strong>Clock format</strong><small>Choose 12-hour or 24-hour time</small></span><select id="setting-clock-format"><option value="24">24 hour</option><option value="12">12 hour</option></select></label>
+            <label class="setting-control"><span><strong>Clock typeface</strong><small>Elegant, modern or mono</small></span><select id="setting-clock-font"><option value="serif">Editorial</option><option value="sans">Modern</option><option value="mono">Monospaced</option></select></label>
+            <label class="setting-slider"><span><strong>Clock size</strong><output id="clock-size-value">84 px</output></span><input id="setting-clock-size" type="range" min="64" max="104" step="2" value="84" /></label>
+            <label class="setting-slider"><span><strong>Clock opacity</strong><output id="clock-opacity-value">100%</output></span><input id="setting-clock-opacity" type="range" min="45" max="100" value="100" /></label>
+            <label class="setting-control"><span><strong>Clock position</strong><small>Adjust the hero spacing</small></span><select id="setting-clock-position"><option value="high">Upper</option><option value="center" selected>Middle</option><option value="low">Lower</option></select></label>
+            <label class="setting-control"><span><strong>Time zone</strong><small>Used for clock and market sessions</small></span><select id="setting-timezone"><option value="Asia/Kolkata">Asia/Kolkata</option><option value="UTC">UTC</option><option value="Europe/London">Europe/London</option><option value="America/New_York">America/New_York</option><option value="Asia/Tokyo">Asia/Tokyo</option></select></label>
+          </section>
+
+          <section class="setting-section"><h3>WALLPAPER</h3>
+            <label class="setting-slider"><span><strong>Wallpaper brightness</strong><output id="wallpaper-brightness-value">76%</output></span><input id="setting-wallpaper-brightness" type="range" min="35" max="115" value="76" /></label>
+            <label class="setting-slider"><span><strong>Background intensity</strong><output id="wallpaper-intensity-value">80%</output></span><input id="setting-wallpaper-intensity" type="range" min="20" max="100" value="80" /></label>
+            <label class="setting-slider"><span><strong>Gold accent</strong><output id="gold-intensity-value">55%</output></span><input id="setting-gold-intensity" type="range" min="15" max="90" value="55" /></label>
+          </section>
+
+          <section class="setting-section"><h3>GOLD MARKET</h3>
+            <label class="setting-control"><span><strong>Market source</strong><small>Demo is simulated and clearly labelled</small></span><select id="setting-data-mode"><option value="demo">DEMO DATA</option><option value="live">LIVE FEED</option></select></label>
+            <label class="setting-control"><span><strong>Battery profile</strong><small>Controls refresh while the app is visible</small></span><select id="setting-battery"><option value="saver">Battery saver · 60 sec</option><option value="balanced" selected>Balanced · 15 sec</option><option value="fast">Fast market · 5 sec</option></select></label>
+            <label class="setting-control"><span><strong>Default timeframe</strong><small>Choose the chart interval</small></span><select id="setting-default-timeframe"><option value="1m">1 minute</option><option value="5m" selected>5 minutes</option><option value="15m">15 minutes</option><option value="1h">1 hour</option></select></label>
+            <label class="setting-slider"><span><strong>Chart opacity</strong><output id="chart-opacity-value">88%</output></span><input id="setting-chart-opacity" type="range" min="35" max="100" value="88" /></label>
+            <div class="setting-toggle-list">
+              <label class="setting-toggle"><span><strong>Gold market module</strong><small>XAUUSD quote and chart</small></span><input type="checkbox" data-setting-toggle="showGold" checked /><i></i></label>
+              <label class="setting-toggle"><span><strong>Gold price</strong><small>Current XAUUSD price</small></span><input type="checkbox" data-setting-toggle="showPrice" checked /><i></i></label>
+              <label class="setting-toggle"><span><strong>Daily percentage</strong><small>Change from the provider’s session</small></span><input type="checkbox" data-setting-toggle="showChange" checked /><i></i></label>
+              <label class="setting-toggle"><span><strong>Daily high / low</strong><small>Session range</small></span><input type="checkbox" data-setting-toggle="showHighLow" checked /><i></i></label>
+              <label class="setting-toggle"><span><strong>Mini candlestick chart</strong><small>Compact OHLC view</small></span><input type="checkbox" data-setting-toggle="showChart" checked /><i></i></label>
+              <label class="setting-toggle"><span><strong>Trend snapshot</strong><small>EMA-based direction</small></span><input type="checkbox" data-setting-toggle="showTrend" checked /><i></i></label>
+              <label class="setting-toggle"><span><strong>RSI</strong><small>14-period momentum</small></span><input type="checkbox" data-setting-toggle="showRsi" checked /><i></i></label>
+              <label class="setting-toggle"><span><strong>VWAP</strong><small>Requires non-zero volume data</small></span><input type="checkbox" data-setting-toggle="showVwap" checked /><i></i></label>
+              <label class="setting-toggle"><span><strong>Volatility</strong><small>Recent range vs its average</small></span><input type="checkbox" data-setting-toggle="showVolatility" checked /><i></i></label>
+              <label class="setting-toggle"><span><strong>Trading sessions</strong><small>Asia, London and New York</small></span><input type="checkbox" data-setting-toggle="showSessions" checked /><i></i></label>
+            </div>
+          </section>
+
+          <section class="setting-section"><h3>PERSONAL DASHBOARD</h3>
+            <div class="setting-toggle-list">
+              <label class="setting-toggle"><span><strong>Monthly calendar</strong><small>Month view and routine markers</small></span><input type="checkbox" data-setting-toggle="showCalendar" checked /><i></i></label>
+              <label class="setting-toggle"><span><strong>Daily schedule</strong><small>Your local routine list</small></span><input type="checkbox" data-setting-toggle="showSchedule" checked /><i></i></label>
+              <label class="setting-toggle"><span><strong>Year progress</strong><small>Calculated from today’s date</small></span><input type="checkbox" data-setting-toggle="showYear" checked /><i></i></label>
+              <label class="setting-toggle"><span><strong>Task panel</strong><small>On-device checklist</small></span><input type="checkbox" data-setting-toggle="showTasks" checked /><i></i></label>
+              <label class="setting-toggle"><span><strong>Daily intention reminder</strong><small id="notification-support-copy">Optional system notification while the dashboard is available</small></span><input id="setting-daily-reminder" type="checkbox" /><i></i></label>
+              <label class="setting-control reminder-time-control"><span><strong>Reminder time</strong><small>Uses the selected time zone</small></span><input id="setting-reminder-time" type="time" value="08:45" /></label>
+            </div>
+          </section>
+          <div class="settings-data-note"><span>ⓘ</span><p>Demo values are simulated and marked DEMO DATA. Live mode uses the public BiQuote XAUUSD feed; a closed or stale feed is labelled instead of shown as live. This is not financial advice.</p></div>
+          <button id="reset-settings" class="reset-settings" type="button">Reset dashboard to defaults</button>
+        </div>
+      </dialog>
+
+      <dialog class="quick-dialog" id="quick-dialog" aria-labelledby="quick-title">
+        <form id="quick-form" method="dialog">
+          <div class="dialog-handle" aria-hidden="true"></div>
+          <div class="settings-heading"><div><span class="micro-label" id="quick-overline">TODAY · PERSONAL PLAN</span><h2 id="quick-title">Add a moment</h2></div><button class="dialog-close" id="close-quick" type="button" aria-label="Close">×</button></div>
+          <label class="form-field"><span id="quick-name-label">Name</span><input id="quick-name" type="text" maxlength="40" placeholder="e.g. Review gold levels" required /></label>
+          <label class="form-field" id="quick-time-field"><span>Time</span><input id="quick-time" type="time" value="15:00" /></label>
+          <button class="save-button" type="submit">Save to this device <span>↗</span></button>
+        </form>
+      </dialog>
+      <div class="toast" id="toast" role="status" aria-live="polite"></div>
+    </div>
+  </body>
+</html>
